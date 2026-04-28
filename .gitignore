@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+venv.bak/
+.vscode/
+.idea/
+
+# PyInstaller
+*.spec
+build/
+dist/
+
+# Project specific
+config/settings.json
+data/
+templates/*.json
+!templates/README.md
+ffmpeg.exe
+assets/fonts/
+*.log
+.DS_Store

@@ -1,0 +1,151 @@
+{
+  "CTk": {
+    "comment": "основной фон",
+    "fg_color": ["#141414", "#141414"]
+  },
+  "CTkToplevel": {
+    "comment": "онборд",
+    "fg_color": ["#141414", "#141414"]
+  },
+  "CTkFrame": {
+    "comment": "центральный фрейм и фрейм устройств",
+    "corner_radius": 6,
+    "border_width": 0,
+    "fg_color": ["#252525", "#252525"],
+    "top_fg_color": ["#252525", "#252525"],
+    "border_color": ["#024c42", "#024c42"]
+  },
+  "CTkButton": {
+    "comment": "обшие кнопки в устройствах, истории и шаблонах",
+    "corner_radius": 6,
+    "border_width": 0,
+    "fg_color": ["#017365", "#017365"],
+    "hover_color": ["#024c42", "#024c42"],
+    "border_color": ["#024c42", "#024c42"],
+    "text_color": ["#ffffff", "#e0e0e0"],
+    "text_color_disabled": ["#334857", "#2a3c48"]
+  },
+  "CTkLabel": {
+    "comment": "заголовки расшифровки и итогов",
+    "corner_radius": 0,
+    "fg_color": "transparent",
+    "text_color": ["#ffffff", "#e0e0e0"]
+  },
+  "CTkEntry": {
+    "comment": "инпут поля",
+    "corner_radius": 6,
+    "border_width": 0,
+    "fg_color": ["#333333", "#333333"],
+    "border_color": ["#024c42", "#024c42"],
+    "text_color": ["#ffffff", "#e0e0e0"],
+    "placeholder_text_color": ["#ffffff", "#e0e0e0"]
+  },
+  "CTkCheckBox": {
+    "comment": "тогл генерации итогов",
+    "corner_radius": 6,
+    "border_width": 1,
+    "fg_color": ["#017365", "#017365"],
+    "border_color": ["#696969", "#696969"],
+    "hover_color": ["#024c42", "#024c42"],
+    "checkmark_color": ["#ffffff", "#e0e0e0"],
+    "text_color": ["#ffffff", "#e0e0e0"],
+    "text_color_disabled": ["#446074", "#3b5465"]
+  },
+  "CTkRadioButton": {
+    "comment": "радиобатоны устройств",
+    "corner_radius": 1000,
+    "border_width_checked": 7,
+    "border_width_unchecked": 4,
+    "fg_color": ["#017365", "#017365"],
+    "border_color": ["#696969", "#696969"],
+    "hover_color": ["#024c42", "#024c42"],
+    "text_color": ["#ffffff", "#e0e0e0"],
+    "text_color_disabled": ["#446074", "#3b5465"]
+  },
+  "CTkProgressBar": {
+    "comment": "бар остановки записи",
+    "corner_radius": 1000,
+    "border_width": 0,
+    "fg_color": ["#017365", "#017365"],
+    "progress_color": ["#024c42", "#024c42"],
+    "border_color": ["#22303a", "#3b5465"]
+  },
+  "CTkSlider": {
+    "comment": "порог тишины",
+    "corner_radius": 1000,
+    "button_corner_radius": 1000,
+    "border_width": 6,
+    "button_length": 0,
+    "fg_color": ["#017365", "#017365"],
+    "progress_color": ["#024c42", "#024c42"],
+    "button_color": ["#017365", "#017365"],
+    "button_hover_color": ["#024c42", "#024c42"]
+  },
+  "CTkOptionMenu": {
+    "comment": "выпадашки в устройствах",
+    "corner_radius": 6,
+    "border_width": 1,
+    "fg_color": ["#333333", "#333333"],
+    "border_color": ["#024c42", "#024c42"],
+    "button_color": ["#017365", "#017365"],
+    "button_hover_color": ["#024c42", "#024c42"],
+    "text_color": ["#ffffff", "#e0e0e0"],
+    "text_color_disabled": ["#334857", "#2a3c48"]
+  },
+  "CTkScrollbar": {
+    "comment": "скроллбар",
+    "corner_radius": 1000,
+    "border_spacing": 4,
+    "fg_color": "transparent",
+    "button_color": ["#696969", "#696969"],
+    "button_hover_color": ["#4f4f4f", "#4f4f4f"]
+  },
+  "CTkSegmentedButton": {
+    "comment": "верхние табы",
+    "corner_radius": 6,
+    "border_width": 0,
+    "fg_color": ["#333333", "#333333"],
+    "selected_color": ["#1e776d", "#1e776d"],
+    "selected_hover_color": ["#017365", "#017365"],
+    "unselected_color": ["#696969", "#696969"],
+    "unselected_hover_color": ["#4f4f4f", "#4f4f4f"],
+    "text_color": ["#ffffff", "#ffffff"],
+    "text_color_disabled": ["#334857", "#2a3c48"]
+  },
+  "CTkTextbox": {
+    "comment": "расшифровка, итоги, история",
+    "corner_radius": 6,
+    "border_width": 1,
+    "fg_color": ["#141414", "#141414"],
+    "border_color": ["#017365", "#017365"],
+    "text_color": ["#ffffff", "#e0e0e0"],
+    "scrollbar_button_color": ["#696969", "#696969"],
+    "scrollbar_button_hover_color": ["#4f4f4f", "#4f4f4f"]
+  },
+  "CTkScrollableFrame": {
+    "comment": "скроллбар в истории",
+    "label_fg_color": ["#696969", "#696969"]
+  },
+  "DropdownMenu": {
+    "fg_color": ["#333333", "#333333"],
+    "hover_color": ["#4f4f4f", "#4f4f4f"],
+    "text_color": ["#ffffff", "#e0e0e0"]
+  },
+  "CTkFont": {
+    "macOS": {
+      "family": "Inter",
+      "size": 13,
+      "weight": "normal"
+    },
+    "Windows": {
+      "family": "Inter",
+      "size": 13,
+      "weight": "normal"
+    },
+    "Linux": {
+      "family": "Inter",
+      "size": 13,
+      "weight": "normal"
+    }
+  }
+}
