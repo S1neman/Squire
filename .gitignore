@@ -23,3 +23,5 @@ ffmpeg.exe
 assets/fonts/
 *.log
 .DS_Store
+build_exe.bat
+publish_version.bat
