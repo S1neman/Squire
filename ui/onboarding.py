@@ -5,6 +5,8 @@ import threading
 from core.devices import get_unique_input_devices
 import ollama
 from huggingface_hub import snapshot_download
+import logging
+logger = logging.getLogger(__name__)
 
 # Словари для отображения размера моделей
 WHISPER_DISPLAY = {
@@ -32,6 +34,7 @@ class OnboardingFrame(ctk.CTkFrame):
         self.update_ollama_status()
 
     def create_widgets(self):
+        import webbrowser
         main_frame = ctk.CTkFrame(self, fg_color="transparent")
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
@@ -60,6 +63,10 @@ class OnboardingFrame(ctk.CTkFrame):
         self.whisper_status_label = ctk.CTkLabel(whisper_frame, text="", font=('Inter', 11))
         self.whisper_status_label.pack(side='left', padx=10)
 
+        # Ручная ссылка на виспер
+        whisper_link = ctk.CTkButton(whisper_frame, text="Скачать модели Whisper вручную", command=lambda: webbrowser.open("https://huggingface.co/Systran/faster-whisper-small"), fg_color="transparent", text_color="#3FCABA", font=('Inter', 12))
+        whisper_link.pack(side='left', padx=5)
+
         # ----- Ollama -----
         ctk.CTkLabel(main_frame, text="Модель Ollama (генерация итогов):", font=('Inter', 14)).pack(anchor='w', pady=(15, 5))
         ollama_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
@@ -82,6 +89,10 @@ class OnboardingFrame(ctk.CTkFrame):
         self.ollama_progress.pack_forget()
         self.ollama_status_label = ctk.CTkLabel(ollama_frame, text="", font=('Inter', 11))
         self.ollama_status_label.pack(side='left', padx=10)
+
+        # Ручная сссылка на оламу
+        ollama_link = ctk.CTkButton(ollama_frame, text="Cначала скачайте сервер ollama", command=lambda: webbrowser.open("https://ollama.com/download"), fg_color="transparent", text_color="#3FCABA", font=('Inter', 12))
+        ollama_link.pack(side='left', padx=5)
 
         # ----- Устройства -----
         ctk.CTkLabel(main_frame, text="Выберите устройства ввода:", font=('Inter', 14, 'bold')).pack(anchor='w', pady=(20, 10))
@@ -107,7 +118,7 @@ class OnboardingFrame(ctk.CTkFrame):
         self.threshold_slider.configure(command=lambda v: self.threshold_label.configure(text=f"{float(v):.3f}"))
 
         ctk.CTkButton(main_frame, text="Завершить настройку", command=self.save_and_close,
-                      font=('Inter', 14), height=40).pack(pady=20)
+                      font=('Inter', 14), height=40, width=200).pack(pady=(20, 10))
 
     def _on_whisper_changed(self, choice=None):
         selected_display = self.whisper_var.get()
@@ -178,11 +189,15 @@ class OnboardingFrame(ctk.CTkFrame):
         threading.Thread(target=self._download_whisper_thread, args=(model_name,), daemon=True).start()
 
     def _download_whisper_thread(self, model_name):
+        import traceback
         try:
+            logger.info(f"Начало скачивания модели Whisper: {model_name}")
             repo_id = f"Systran/faster-whisper-{model_name}"
             snapshot_download(repo_id=repo_id)
+            logger.info(f"Модель Whisper {model_name} успешно скачана")
             self.after(0, lambda: self.whisper_status_label.configure(text="✓ установлено", text_color="#3FCABA"))
         except Exception as e:
+            logger.error(f"Ошибка скачивания Whisper {model_name}: {e}\n{traceback.format_exc()}")
             self.after(0, lambda: self.whisper_status_label.configure(text="Ошибка", text_color="red"))
         finally:
             self.after(0, lambda: self.download_whisper_btn.configure(state="normal", text="Скачать"))
@@ -199,10 +214,14 @@ class OnboardingFrame(ctk.CTkFrame):
         threading.Thread(target=self._download_ollama_thread, args=(model_name,), daemon=True).start()
 
     def _download_ollama_thread(self, model_name):
+        import traceback
         try:
+            logger.info(f"Начало скачивания модели ollama: {model_name}")
             ollama.pull(model_name)
             self.after(0, lambda: self.ollama_status_label.configure(text="✓ установлено", text_color="#3FCABA"))
+            logger.info(f"Модель ollama {model_name} успешно скачана")
         except Exception as e:
+            logger.error(f"Ошибка скачивания ollama {model_name}: {e}\n{traceback.format_exc()}")
             self.after(0, lambda: self.ollama_status_label.configure(text="Ошибка", text_color="red"))
         finally:
             self.after(0, lambda: self.download_ollama_btn.configure(state="normal", text="Скачать"))

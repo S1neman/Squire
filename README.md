@@ -2,9 +2,13 @@
   <img src="assets/icons/app_icon.png">
 </div>
 
-# Squire – локальный транскрибатор с итогами записей по шаблонам
+<div align="center">
 
-Версия: 0.1.3
+# Squire - локальный транскрибатор с итогами записей по шаблонам
+
+</div>
+
+Версия: 0.1.4
 <div align="center">
   <img src="squire.webp">
 </div>

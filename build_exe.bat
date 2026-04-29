@@ -75,6 +75,7 @@ echo Copying files...
 if exist "README.md" copy /y README.md dist\README.md
 if exist "CHANGELOG.md" copy /y CHANGELOG.md dist\CHANGELOG.md
 if "%FFMPEG_COPY%"=="yes" copy /y ffmpeg.exe dist\ffmpeg.exe
+if exist "dist\logs" rmdir /s /q "dist\logs"
 
 :: 10. Final message
 echo.

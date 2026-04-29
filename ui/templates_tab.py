@@ -1,9 +1,8 @@
 import customtkinter as ctk
-from core.templates import load_templates, save_template, delete_template, update_template
-from tkinter import messagebox
 import subprocess
-import os
-from core.templates import TEMPLATES_DIR
+from core.templates import load_templates, save_template, delete_template, update_template
+from core.paths import TEMPLATES_DIR
+from tkinter import messagebox
 
 class TemplatesTab(ctk.CTkFrame):
     def __init__(self, parent, on_status, recording_tab):
@@ -38,7 +37,6 @@ class TemplatesTab(ctk.CTkFrame):
         else:
             for t in templates:
                 self._create_template_card(t)
-        # Обновляем выпадающий список в recordingTab
         self.recording_tab.refresh_templates_list()
 
     def _create_template_card(self, template, is_new=False):
@@ -84,18 +82,16 @@ class TemplatesTab(ctk.CTkFrame):
         edit_frame.pack_forget()
         card.edit_frame = edit_frame
 
-        # Поля редактирования
         ctk.CTkLabel(edit_frame, text="Название:", font=('Inter', 12)).pack(anchor='w', pady=(5,0))
         name_entry = ctk.CTkEntry(edit_frame, width=400, font=('Inter', 13))
         name_entry.insert(0, name)
         name_entry.pack(fill='x', pady=5)
 
-        ctk.CTkLabel(edit_frame, text="Текст промпта (используйте {text}):", font=('Inter', 12)).pack(anchor='w')
+        ctk.CTkLabel(edit_frame, text="Укажите ваш промпт", font=('Inter', 12)).pack(anchor='w')
         prompt_text = ctk.CTkTextbox(edit_frame, height=150, font=('Inter', 13))
         prompt_text.insert('0.0', prompt)
         prompt_text.pack(fill='x', pady=5)
 
-        # Кнопки
         btn_frame = ctk.CTkFrame(edit_frame, fg_color="transparent")
         btn_frame.pack(fill='x', pady=5)
         save_btn = ctk.CTkButton(btn_frame, text="Сохранить", width=100,
@@ -122,7 +118,7 @@ class TemplatesTab(ctk.CTkFrame):
         if new_mode:
             card.name_label.configure(text="Новый шаблон")
 
-    def toggle_edit(self, name, card):
+    def toggle_edit(self, card):
         if card.editing:
             self.cancel_edit(card)
         else:
@@ -166,14 +162,12 @@ class TemplatesTab(ctk.CTkFrame):
             self.refresh()
 
     def add_new_template(self):
-        # Создаём временную карточку
         self._create_template_card({"name": "", "prompt": ""}, is_new=True)
         self.scroll_frame._parent_canvas.yview_moveto(1.0)
 
     def delete_template(self, name):
         if messagebox.askyesno("Удаление", f"Удалить шаблон '{name}'?\n\nЕсли удаление не удаётся, откройте папку и удалите файл вручную."):
-            from core.templates import delete_template as del_template_func
-            result = del_template_func(name)
+            result = delete_template(name)
             if result:
                 self.refresh()
                 self.on_status(f"Шаблон '{name}' удалён", "active")

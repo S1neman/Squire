@@ -3,16 +3,24 @@ import os
 import time
 from core.paths import TEMPLATES_DIR
 
-DEFAULT_TEMPLATE = {
-    "name": "Стандартный",
-    "prompt": "Ты — AI-ассистент. Сделай структурированные итоги на русском языке.\nВыдели в параграфы с нумерацией: 1. Основные темы  2. Ключевые идеи и планы  3. Главные выводы и приоритеты.\nТекст:\n{text}"
-}
+def ensure_text_placeholder(prompt: str) -> str:
+    if "{text}" not in prompt:
+        prompt = prompt.rstrip() + "\n\nТекст:\n{text}"
+    return prompt
 
 def get_default_template():
-    return DEFAULT_TEMPLATE.copy()
+    return {
+        "name": "Стандартный",
+        "prompt": ensure_text_placeholder(
+            "Ты — AI-ассистент. Сделай структурированные итоги на русском языке.\n"
+            "Выдели в параграфы с нумерацией:\n"
+            "1. Основные темы\n"
+            "2. Ключевые идеи и планы\n"
+            "3. Главные выводы и приоритеты."
+        )
+    }
 
 def load_templates():
-    """Загружает все шаблоны из папки templates/ в виде списка словарей"""
     os.makedirs(TEMPLATES_DIR, exist_ok=True)
     templates = []
     for fname in os.listdir(TEMPLATES_DIR):
@@ -26,8 +34,10 @@ def load_templates():
     return templates
 
 def save_template(template):
-    """Сохраняет шаблон в файл (если нет имени, генерирует)"""
     name = template.get('name', 'Без названия')
+    prompt = ensure_text_placeholder(template.get('prompt', ''))
+    template['prompt'] = prompt
+
     safe_name = "".join(c for c in name if c.isalnum() or c in (' ', '_', '-')).strip()
     if not safe_name:
         safe_name = "template"
@@ -58,7 +68,7 @@ def delete_template(template_name):
     return False
 
 def update_template(old_name, new_template):
-    """Заменяет шаблон с именем old_name на новый"""
+    new_template['prompt'] = ensure_text_placeholder(new_template.get('prompt', ''))
     for fname in os.listdir(TEMPLATES_DIR):
         if fname.endswith('.json'):
             path = os.path.join(TEMPLATES_DIR, fname)

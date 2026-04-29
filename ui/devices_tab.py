@@ -7,6 +7,8 @@ import sounddevice as sd
 import numpy as np
 import ollama
 from huggingface_hub import snapshot_download
+import logging
+logger = logging.getLogger(__name__)
 
 # Словари для отображения размера моделей
 WHISPER_DISPLAY = {
@@ -206,7 +208,6 @@ class DevicesTab(ctk.CTkFrame):
         self.whisper_status_label.update_idletasks()
 
     def update_ollama_status(self):
-        # Вызывается из __init__ и после скачивания
         self._on_ollama_changed()
 
     def _async_update_ollama_status(self):
@@ -234,12 +235,16 @@ class DevicesTab(ctk.CTkFrame):
         threading.Thread(target=self._download_whisper_thread, args=(model_name,), daemon=True).start()
 
     def _download_whisper_thread(self, model_name):
+        import traceback
         try:
+            logger.info(f"Начало скачивания модели Whisper: {model_name}")
             repo_id = f"Systran/faster-whisper-{model_name}"
             snapshot_download(repo_id=repo_id)
             self.after(0, lambda: self.on_status(f"Модель Whisper {model_name} успешно скачана"), "active")
+            logger.info(f"Модель Whisper {model_name} успешно скачана")
             self.after(0, self.update_whisper_status)
         except Exception as e:
+            logger.error(f"Ошибка скачивания Whisper {model_name}: {e}\n{traceback.format_exc()}")
             self.after(0, lambda: self.on_status(f"Ошибка загрузки Whisper: {e}"), "critical")
         finally:
             self.after(0, lambda: self.download_whisper_btn.configure(state="normal", text="Скачать"))
@@ -255,11 +260,15 @@ class DevicesTab(ctk.CTkFrame):
         threading.Thread(target=self._download_ollama_thread, args=(model_name,), daemon=True).start()
 
     def _download_ollama_thread(self, model_name):
+        import traceback
         try:
+            logger.info(f"Начало скачивания модели ollama: {model_name}")
             ollama.pull(model_name)
             self.after(0, lambda: self.on_status(f"Модель Ollama {model_name} успешно установлена"), "active")
+            logger.info(f"Модель ollama {model_name} успешно скачана")
             self.after(0, self.update_ollama_status)
         except Exception as e:
+            logger.error(f"Ошибка скачивания ollama {model_name}: {e}\n{traceback.format_exc()}")
             self.after(0, lambda: self.on_status(f"Ошибка загрузки Ollama: {e}"), "critical")
         finally:
             self.after(0, lambda: self.download_ollama_btn.configure(state="normal", text="Скачать"))
@@ -274,6 +283,7 @@ class DevicesTab(ctk.CTkFrame):
         self.test_device(self.sys_combo.get(), "системный звук")
 
     def test_device(self, device_str, name):
+        import traceback
         try:
             dev_id = int(device_str.split(':')[0])
         except:
@@ -305,6 +315,7 @@ class DevicesTab(ctk.CTkFrame):
 
     # ----- Сохранение настроек -----
     def save_settings(self):
+        import traceback
         try:
             mic_str = self.mic_combo.get()
             sys_str = self.sys_combo.get()
@@ -320,6 +331,8 @@ class DevicesTab(ctk.CTkFrame):
                 'ollama_model': getattr(self, 'ollama_selected', None) or self.settings.get('ollama_model', 'gemma3:4b')
             })
             self.on_settings_change(self.settings)
+            logger.info(f"Успешное сохранение настроек")
             self.on_status("Настройки сохранены", "active")
         except Exception as e:
+            logger.error(f"Ошибка сохранения настроек: {e}\n{traceback.format_exc()}")
             self.on_status(f"Ошибка сохранения: {e}", "critical")

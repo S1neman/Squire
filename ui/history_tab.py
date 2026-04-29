@@ -118,9 +118,9 @@ class HistoryTab(ctk.CTkFrame):
             card.expand_frame.pack(fill='x', padx=8, pady=(4, 4))
             card.expand_btn.configure(text="▽")
             card.expanded = True
-
+    
+    # Получаем итоги
     def copy_summary(self, session_id):
-        # Получаем итоги
         sessions = get_all_sessions()
         text = ""
         for s in sessions:
@@ -146,8 +146,8 @@ class HistoryTab(ctk.CTkFrame):
             if len(self.scroll_frame.winfo_children()) == 0:
                 no_data = ctk.CTkLabel(self.scroll_frame, text="Нет сохранённых записей", font=('Inter', 14))
                 no_data.pack(pady=20)
-     
-     # Открываем папку data в проводнике
+    
+    # Открываем папку data в проводнике
     def open_data_folder(self):
         data_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
         if os.path.exists(data_folder):

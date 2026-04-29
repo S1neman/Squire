@@ -2,6 +2,8 @@ import sys
 import os
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 import customtkinter as ctk
+from core.logger import setup_logger
+logger = setup_logger()
 
 sys.path.insert(0, os.path.dirname(__file__))
 
