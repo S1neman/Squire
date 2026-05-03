@@ -20,8 +20,8 @@ class SquireApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Squire")
-        self.geometry("920x600")
-        self.minsize(920, 600)
+        self.geometry("920x650")
+        self.minsize(920, 650)
 
         # Центрирование окна
         screen_width = self.winfo_screenwidth()
@@ -98,7 +98,7 @@ class SquireApp(ctk.CTk):
                 if not success:
                     self.update_status("Не удалось запустить Ollama. Установите и запустите вручную.", "critical")
             threading.Thread(target=lambda: ensure_ollama_running(on_ollama_started), daemon=True).start()
-            self._show_main_ui()
+            self._show_main_ui()         
 
     def load_settings(self):
         if os.path.exists(SETTINGS_FILE):

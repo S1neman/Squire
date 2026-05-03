@@ -1,6 +1,16 @@
 import sys
 import os
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+if getattr(sys, 'frozen', False):
+    base_dir = os.path.dirname(sys.executable)
+    log_dir = os.path.join(base_dir, 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    error_log = os.path.join(log_dir, 'error.log')
+    sys.stderr = open(error_log, 'a')
+    sys.stdout = open(os.devnull, 'w')
+else:
+    pass
+os.environ["TQDM_DISABLE"] = "1"
 import customtkinter as ctk
 from core.logger import setup_logger
 logger = setup_logger()

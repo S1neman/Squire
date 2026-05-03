@@ -57,24 +57,16 @@ class TemplatesTab(ctk.CTkFrame):
 
         # Кнопки
         if not is_new:
-            delete_btn = ctk.CTkButton(header_frame, text="❌", width=32, height=32,
+            delete_btn = ctk.CTkButton(header_frame, text="❌", width=28, height=28,
                                        command=lambda n=name: self.delete_template(n),
-                                       font=('Inter', 14))
+                                       font=('Inter', 10))
             delete_btn.pack(side='right', padx=5)
             
-            edit_btn = ctk.CTkButton(header_frame, text="▷", width=32, height=32,
+            edit_btn = ctk.CTkButton(header_frame, text="▷", width=28, height=28,
                                      command=lambda n=name, crd=card: self.toggle_edit(n, crd),
                                      font=('Inter', 14))
             edit_btn.pack(side='right', padx=5)
             card.edit_btn = edit_btn
-
-        # Превью
-        if not is_new:
-            preview = prompt[:150] + "..." if len(prompt) > 150 else prompt
-            preview_label = ctk.CTkLabel(card, text=preview, font=('Inter', 12),
-                                         wraplength=600, justify='left', anchor='w')
-            preview_label.pack(fill='x', padx=8, pady=(0, 4))
-            card.preview_label = preview_label
 
         # Контейнер для формы редактирования
         edit_frame = ctk.CTkFrame(card, fg_color="transparent")
@@ -109,16 +101,14 @@ class TemplatesTab(ctk.CTkFrame):
             self._expand_edit(card, new_mode=True)
 
     def _expand_edit(self, card, new_mode=False):
-        if hasattr(card, 'preview_label'):
-            card.preview_label.pack_forget()
         if hasattr(card, 'edit_btn'):
             card.edit_btn.configure(text="▽")
-        card.edit_frame.pack(fill='x', padx=8, pady=(0, 4))
+        card.edit_frame.pack(fill='x', padx=8, pady=(4, 4))
         card.editing = True
         if new_mode:
             card.name_label.configure(text="Новый шаблон")
 
-    def toggle_edit(self, card):
+    def toggle_edit(self, name, card):
         if card.editing:
             self.cancel_edit(card)
         else:
@@ -135,8 +125,6 @@ class TemplatesTab(ctk.CTkFrame):
             return
 
         card.edit_frame.pack_forget()
-        if hasattr(card, 'preview_label'):
-            card.preview_label.pack(fill='x', padx=8, pady=(0, 4))
         if hasattr(card, 'edit_btn'):
             card.edit_btn.configure(text="▷")
         card.editing = False

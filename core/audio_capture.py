@@ -3,6 +3,8 @@ import numpy as np
 import threading
 import queue
 from typing import Optional, List
+import logging
+logger = logging.getLogger(__name__)
 
 class AudioCapture:
     def __init__(
@@ -114,7 +116,7 @@ class AudioCapture:
             chunk = indata.copy().flatten()
         else:
             chunk = np.mean(indata, axis=1).flatten()
-
+        logger.debug(f"Callback {name}, data shape: {indata.shape}")
         chunk = chunk * weight
         chunk = np.clip(chunk, -1.0, 1.0)
 
@@ -140,7 +142,11 @@ class AudioCapture:
             return np.concatenate(sys_chunks)
 
         # mix
-        if not mic_chunks or not sys_chunks:
+        if mic_chunks and not sys_chunks:
+            return np.concatenate(mic_chunks)
+        if sys_chunks and not mic_chunks:
+            return np.concatenate(sys_chunks)
+        if not mic_chunks and not sys_chunks:
             return None
         mic_block = np.concatenate(mic_chunks)
         sys_block = np.concatenate(sys_chunks)
@@ -151,6 +157,9 @@ class AudioCapture:
         max_val = np.max(np.abs(mixed))
         if max_val > 1.0:
             mixed = mixed / max_val
+        max_val = np.max(np.abs(mixed))
+        if max_val > 0:
+            mixed = mixed / max_val
         return mixed
 
     def get_full_audio(self) -> Optional[np.ndarray]:
@@ -159,7 +168,11 @@ class AudioCapture:
         if self.mode == 'system':
             return np.concatenate(self.full_system) if self.full_system else None
 
-        if not self.full_mic or not self.full_system:
+        if self.full_mic and not self.full_system:
+            return np.concatenate(self.full_mic)
+        if self.full_system and not self.full_mic:
+            return np.concatenate(self.full_system)
+        if not self.full_mic and not self.full_system:
             return None
         mic_full = np.concatenate(self.full_mic)
         sys_full = np.concatenate(self.full_system)

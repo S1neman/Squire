@@ -7,6 +7,15 @@ import ollama
 from core.audio_capture import AudioCapture
 from core.transcriber import Transcriber
 from core.history import save_session, update_session_transcript, update_session_summary, save_transcript_to_file, save_summary_to_file
+from core.markdown_utils import markdown_to_plain
+try:
+    import win32clipboard
+    WIN32_AVAILABLE = True
+except ImportError:
+    WIN32_AVAILABLE = False
+import logging
+logger = logging.getLogger(__name__)
+import traceback
 
 class RecordingTab(ctk.CTkFrame):
     def __init__(self, parent, settings, on_status_update, on_transcript_update, on_summary_update, on_settings_change, history_tab):
@@ -181,79 +190,126 @@ class RecordingTab(ctk.CTkFrame):
             self.stop_recording()
 
     def start_recording(self):
-        mic_id = self.settings.get('mic_device')
-        sys_id = self.settings.get('sys_device')
-        if mic_id is None:
-            self.on_status("Ошибка: не выбран микрофон", "error")
-            return
-        mode = self.mode_var.get()
-        if mode in ('system', 'mix') and sys_id is None:
-            self.on_status("Ошибка: не выбран системный звук", "error")
-            return
+        try:
+            mic_id = self.settings.get('mic_device')
+            sys_id = self.settings.get('sys_device')
+            mode = self.mode_var.get()
 
-        self.is_recording = True
-        # Очищаем текст перед записью
-        self.text_area.configure(state="normal")
-        self.text_area.delete('0.0', 'end')
-        self.text_area.configure(state="disabled")
-        self.live_text = ""
-        self.summary_box.configure(state='normal')
-        self.summary_box.delete('0.0', 'end')
-        self.summary_box.insert('0.0', "Идёт запись")
-        self.summary_box.configure(state='disabled')
-        self.record_btn.configure(
-            fg_color="#7a0000",
-            hover_color="#871919",
-            text_color="#ffffff",
-            text="⏹️ Остановить"
-        )
+            # Автовыбор микрофона
+            if mic_id is None:
+                from core.devices import get_default_microphone
+                default_id, default_name = get_default_microphone()
+                if default_id is not None:
+                    mic_id = default_id
+                    self.settings['mic_device'] = mic_id
+                    self.on_settings_change(self.settings)
+                    logger.info(f"Автоматически выбран микрофон: {default_name} (id={default_id})")
+                else:
+                    self.on_status("Ошибка: не выбран микрофон и нет доступных устройств", "error")
+                    return
 
-        self.capture = AudioCapture(mic_id, sys_id, mode,
-                                    mic_weight=self.settings.get('mic_weight', 1.0),
-                                    sys_weight=self.settings.get('sys_weight', 3.0))
-        print("[DEBUG] capture created")
-        self.capture.start()
-        self.transcriber = Transcriber(model_name=self.settings.get('whisper_model', 'small'), device='cpu')
-        print("[DEBUG] transcriber created")
+            # Автовыбор системного звука (для режимов system и mix)
+            if mode in ('system', 'mix') and sys_id is None:
+                from core.devices import get_default_system_device
+                default_sys_id, default_sys_name = get_default_system_device(mic_id)
+                if default_sys_id is not None:
+                    sys_id = default_sys_id
+                    self.settings['sys_device'] = sys_id
+                    self.on_settings_change(self.settings)
+                    logger.info(f"Автоматически выбран системный звук: {default_sys_name} (id={default_sys_id})")
+                    root = self.winfo_toplevel()
+                    if hasattr(root, 'devices_tab'):
+                        root.devices_tab.refresh_device_lists()
+                else:
+                    if mode == 'system':
+                        self.on_status("Ошибка: не выбран системный звук и нет доступных устройств", "error")
+                        return
+                    else:
+                        logger.warning("Системный звук не найден, режим mix будет работать только с микрофоном")
 
-        # Запускаем анимацию записи
-        self._start_status_animation(f"Запись ({mode})")
+            self.is_recording = True
+            # Очищаем текст перед записью
+            self.text_area.configure(state="normal")
+            self.text_area.delete('0.0', 'end')
+            self.text_area.configure(state="disabled")
+            self.live_text = ""
+            self.summary_box.configure(state='normal')
+            self.summary_box.delete('0.0', 'end')
+            self.summary_box.insert('0.0', "Идёт запись")
+            self.summary_box.configure(state='disabled')
+            self.record_btn.configure(
+                fg_color="#7a0000",
+                hover_color="#871919",
+                text_color="#ffffff",
+                text="⏹️ Остановить"
+            )
 
-        save_session(mode, str(mic_id), str(sys_id), "", "", 0)
-        from core.history import get_all_sessions
-        sessions = get_all_sessions()
-        if sessions:
-            self.current_session_id = sessions[0][0]
+            self.capture = AudioCapture(mic_id, sys_id, mode,
+                                        mic_weight=self.settings.get('mic_weight', 1.0),
+                                        sys_weight=self.settings.get('sys_weight', 5.0))
+            print("[DEBUG] capture created")
+            self.capture.start()
+            self.transcriber = Transcriber(model_name=self.settings.get('whisper_model', 'small'), device='cpu')
+            print("[DEBUG] transcriber created")
 
-        print("[DEBUG] about to start live_thread")
-        self.live_thread = threading.Thread(target=self.live_transcribe_loop, daemon=True)
-        self.live_thread.start()
-        print("[DEBUG] live_thread started, is_alive:", self.live_thread.is_alive())
+            # Запускаем анимацию записи
+            self._start_status_animation(f"Запись ({mode})")
 
-        # Обновляем статусы моделей
-        self._update_whisper_status_label()
-        self._update_ollama_status_label()
+            save_session(mode, str(mic_id), str(sys_id), "", "", 0)
+            from core.history import get_all_sessions
+            sessions = get_all_sessions()
+            if sessions:
+                self.current_session_id = sessions[0][0]
+
+            print("[DEBUG] about to start live_thread")
+            self.live_thread = threading.Thread(target=self.live_transcribe_loop, daemon=True)
+            self.live_thread.start()
+            print("[DEBUG] live_thread started, is_alive:", self.live_thread.is_alive())
+
+            # Обновляем статусы моделей
+            self._update_whisper_status_label()
+            self._update_ollama_status_label()
+        
+        except Exception as e:
+            import traceback
+            from tkinter import messagebox
+            error_details = traceback.format_exc()
+            messagebox.showerror("Ошибка при старте записи", f"Произошла ошибка:\n{error_details}")
+            # Сброс состояния кнопки записи
+            self.record_btn.configure(
+                fg_color="#CACACA",
+                hover_color="#DFDFDF",
+                text_color="#141414",
+                text="Начать запись"
+            )
+            self.is_recording = False
 
     def live_transcribe_loop(self):
-        print("[DEBUG] live_transcribe_loop ENTERED")
-        silence_threshold = self.settings.get('silence_threshold', 0.01)
-        while self.is_recording:
-            time.sleep(self.settings.get('block_duration', 2.0))
-            if not self.is_recording:
-                break
-            print("[DEBUG] before get_next_block, is_recording =", self.is_recording)
-            block = self.capture.get_next_block(self.settings.get('block_duration', 2.0))
-            print("[DEBUG] block =", block is not None)
-            if block is not None:
-                rms = np.sqrt(np.mean(block**2))
-                print(f"[DEBUG] RMS = {rms:.5f}, threshold = {silence_threshold}")
-                if rms < silence_threshold:
-                    print("  -> skip (below threshold)")
-                    continue
-                text = self.transcriber.transcribe_chunk(block)
-                if text:
-                    print(f"[DEBUG] live_transcribe_loop: text='{text[:50]}...'")
-                    self.after(0, lambda t=text: self.append_transcript(t))
+        logger.info("live_transcribe_loop ENTERED")
+        try:
+            silence_threshold = self.settings.get('silence_threshold', 0.01)
+            while self.is_recording:
+                logger.debug("sleeping for block_duration")
+                time.sleep(self.settings.get('block_duration', 3.0))
+                if not self.is_recording:
+                    break
+                logger.debug("calling get_next_block")
+                block = self.capture.get_next_block(self.settings.get('block_duration', 3.0))
+                logger.debug(f"get_next_block returned {'block' if block is not None else 'None'}")
+                if block is not None:
+                    rms = np.sqrt(np.mean(block**2))
+                    logger.debug(f"Block RMS={rms:.5f}, threshold={silence_threshold}")
+                    if rms < silence_threshold:
+                        logger.debug("below threshold, skip")
+                        continue
+                    text = self.transcriber.transcribe_chunk(block)
+                    if text:
+                        logger.debug(f"Transcribed text: {text[:100]}")
+                        self.after(0, lambda t=text: self.append_transcript(t))
+                else:
+                    logger.debug("block is None, maybe no data yet")
+        except Exception as e:
+            logger.error(f"live_transcribe_loop crashed: {e}\n{traceback.format_exc()}")
 
     def append_transcript(self, new_text):
         print(f"[DEBUG] append_transcript called, text='{new_text[:50]}...'")
@@ -363,11 +419,14 @@ class RecordingTab(ctk.CTkFrame):
             self.after(0, lambda: self._stop_status_animation(f"Ошибка: {e}"))
 
     def _show_summary(self, summary):
+        self.current_summary_markdown = summary
+        plain_summary = markdown_to_plain(summary)
         self.summary_box.configure(state='normal')
         self.summary_box.delete('0.0', 'end')
-        self.summary_box.insert('0.0', summary)
+        self.summary_box.insert('0.0', plain_summary)
         self.summary_box.configure(state='disabled')
         self.on_summary(summary)
+        self.on_status("Итоги готовы", "active")
         if self.history_tab:
             self.history_tab.refresh()
 
@@ -382,15 +441,13 @@ class RecordingTab(ctk.CTkFrame):
             self.on_status("Нет текста для копирования", "info")
 
     def copy_summary(self):
-        self.summary_box.configure(state='normal')
-        text = self.summary_box.get('0.0', 'end').strip()
-        self.summary_box.configure(state='disabled')
-        if text and not text.startswith("Начните запись") and not text.startswith("Идёт запись"):
-            self.clipboard_clear()
-            self.clipboard_append(text)
-            self.on_status("Итоги скопированы в буфер", "active")
-        else:
-            self.on_status("Нет итогов для копирования", "info")
+        if not hasattr(self, 'current_summary_markdown') or not self.current_summary_markdown:
+            self.on_status("Нет итогов для копирования", "error")
+            return
+        root = self.winfo_toplevel()
+        root.clipboard_clear()
+        root.clipboard_append(self.current_summary_markdown)
+        self.on_status("Скопировано", "active")
 
     # ---- Статусы моделей ----
     def _update_whisper_status_label(self):

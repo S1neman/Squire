@@ -32,6 +32,7 @@ class DevicesTab(ctk.CTkFrame):
         self.on_settings_change = on_settings_change
         self.on_status = on_status
         self.create_widgets()
+        self.device_map = {}
         self.refresh_device_lists()
         self.update_whisper_status()
         self.update_ollama_status()
@@ -41,9 +42,9 @@ class DevicesTab(ctk.CTkFrame):
         main_frame.pack(fill='both', expand=True, padx=30, pady=20)
 
         # ----- Микрофон -----
-        ctk.CTkLabel(main_frame, text="Микрофон:", font=('Inter', 14)).grid(row=0, column=0, padx=10, pady=10, sticky='w')
+        ctk.CTkLabel(main_frame, text="Микрофон:", font=('Inter', 14)).grid(row=0, column=0, padx=10, pady=8, sticky='w')
         self.mic_combo = ctk.CTkOptionMenu(main_frame, values=[], width=350, font=('Inter', 13))
-        self.mic_combo.grid(row=0, column=1, padx=10, pady=10)
+        self.mic_combo.grid(row=0, column=1, padx=10, pady=8)
         self.test_mic_btn = ctk.CTkButton(main_frame, text="Тест", command=self.test_mic, width=100, font=('Inter', 13))
         self.test_mic_btn.grid(row=0, column=2, padx=10, pady=10)
 
@@ -51,13 +52,16 @@ class DevicesTab(ctk.CTkFrame):
         ctk.CTkLabel(main_frame, text="Звук (системный):", font=('Inter', 14)).grid(row=1, column=0, padx=10, pady=10, sticky='w')
         self.sys_combo = ctk.CTkOptionMenu(main_frame, values=[], width=350, font=('Inter', 13))
         self.sys_combo.grid(row=1, column=1, padx=10, pady=10)
+        sys_hint = ctk.CTkLabel(main_frame, text="Для захвата звука с компьютера выберите 'Стерео-микшер'\n(если его нет, включите в настройках звука Windows)", 
+                                font=('Inter', 11), wraplength=400, justify='left')
+        sys_hint.grid(row=2, column=0, columnspan=3, padx=10, pady=(5,10), sticky='w')
         self.test_sys_btn = ctk.CTkButton(main_frame, text="Тест", command=self.test_sys, width=100, font=('Inter', 13))
         self.test_sys_btn.grid(row=1, column=2, padx=10, pady=10)
 
         # Вес микрофона (слайдер)
-        ctk.CTkLabel(main_frame, text="Вес микрофона:", font=('Inter', 14)).grid(row=2, column=0, padx=10, pady=10, sticky='w')
+        ctk.CTkLabel(main_frame, text="Вес микрофона:", font=('Inter', 14)).grid(row=3, column=0, padx=10, pady=10, sticky='w')
         mic_weight_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        mic_weight_frame.grid(row=2, column=1, columnspan=2, padx=10, pady=10, sticky='w')
+        mic_weight_frame.grid(row=3, column=1, columnspan=2, padx=10, pady=10, sticky='w')
         self.mic_weight_slider = ctk.CTkSlider(mic_weight_frame, from_=0.1, to=10.0, number_of_steps=100, width=200)
         self.mic_weight_slider.set(self.settings.get('mic_weight', 1.0))
         self.mic_weight_slider.pack(side='left', padx=(0, 10))
@@ -66,9 +70,9 @@ class DevicesTab(ctk.CTkFrame):
         self.mic_weight_slider.configure(command=self.update_mic_weight_label)
 
         # Вес звука (слайдер)
-        ctk.CTkLabel(main_frame, text="Вес звука:", font=('Inter', 14)).grid(row=3, column=0, padx=10, pady=10, sticky='w')
+        ctk.CTkLabel(main_frame, text="Вес звука:", font=('Inter', 14)).grid(row=4, column=0, padx=10, pady=10, sticky='w')
         sys_weight_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        sys_weight_frame.grid(row=3, column=1, columnspan=2, padx=10, pady=10, sticky='w')
+        sys_weight_frame.grid(row=4, column=1, columnspan=2, padx=10, pady=10, sticky='w')
         self.sys_weight_slider = ctk.CTkSlider(sys_weight_frame, from_=0.1, to=10.0, number_of_steps=100, width=200)
         self.sys_weight_slider.set(self.settings.get('sys_weight', 3.0))
         self.sys_weight_slider.pack(side='left', padx=(0, 10))
@@ -77,14 +81,14 @@ class DevicesTab(ctk.CTkFrame):
         self.sys_weight_slider.configure(command=self.update_sys_weight_label)
 
         # Пояснение
-        explanation = ctk.CTkLabel(main_frame, text="Чем выше вес, тем громче источник в миксе.\nРекомендуется: микрофон 1.0, звук - 3.0.",
-                                font=('Inter', 12), justify='left', wraplength=400)
-        explanation.grid(row=4, column=0, columnspan=3, padx=10, pady=(5, 15), sticky='w')
+        explanation = ctk.CTkLabel(main_frame, text="Чем выше вес, тем громче источник в миксе.\nРекомендуется: микрофон 1.0, звук 5.0.",
+                                font=('Inter', 11), justify='left', wraplength=400)
+        explanation.grid(row=5, column=0, columnspan=3, padx=10, pady=(5, 10), sticky='w')
 
         # ----- Порог тишины -----
-        ctk.CTkLabel(main_frame, text="Порог тишины (RMS):", font=('Inter', 14)).grid(row=5, column=0, padx=10, pady=10, sticky='w')
+        ctk.CTkLabel(main_frame, text="Порог тишины (RMS):", font=('Inter', 14)).grid(row=6, column=0, padx=10, pady=10, sticky='w')
         threshold_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        threshold_frame.grid(row=5, column=1, columnspan=2, padx=10, pady=10, sticky='w')
+        threshold_frame.grid(row=6, column=1, columnspan=2, padx=10, pady=10, sticky='w')
         self.silence_threshold_slider = ctk.CTkSlider(threshold_frame, from_=0.01, to=0.05, number_of_steps=40, width=250)
         self.silence_threshold_slider.set(self.settings.get('silence_threshold', 0.01))
         self.silence_threshold_slider.pack(side='left', padx=(0, 10))
@@ -93,9 +97,9 @@ class DevicesTab(ctk.CTkFrame):
         self.silence_threshold_slider.configure(command=self.update_threshold_label)
 
         # ----- Модель Whisper -----
-        ctk.CTkLabel(main_frame, text="Модель Whisper:", font=('Inter', 14)).grid(row=6, column=0, padx=10, pady=10, sticky='w')
+        ctk.CTkLabel(main_frame, text="Модель Whisper:", font=('Inter', 14)).grid(row=7, column=0, padx=10, pady=8, sticky='w')
         whisper_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        whisper_frame.grid(row=6, column=1, columnspan=2, padx=10, pady=10, sticky='w')
+        whisper_frame.grid(row=7, column=1, columnspan=2, padx=10, pady=8, sticky='w')
         self.whisper_var = ctk.StringVar(value=WHISPER_DISPLAY[self.settings.get('whisper_model', 'small')])
         self.whisper_combo = ctk.CTkOptionMenu(
             whisper_frame,
@@ -117,9 +121,9 @@ class DevicesTab(ctk.CTkFrame):
         self.whisper_status_label.pack(side='left', padx=10)
 
         # ----- Модель Ollama -----
-        ctk.CTkLabel(main_frame, text="Модель Ollama:", font=('Inter', 14)).grid(row=7, column=0, padx=10, pady=10, sticky='w')
+        ctk.CTkLabel(main_frame, text="Модель Ollama:", font=('Inter', 14)).grid(row=8, column=0, padx=10, pady=8, sticky='w')
         ollama_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        ollama_frame.grid(row=7, column=1, columnspan=2, padx=10, pady=10, sticky='w')
+        ollama_frame.grid(row=8, column=1, columnspan=2, padx=10, pady=8, sticky='w')
         self.ollama_var = ctk.StringVar(value=OLLAMA_DISPLAY[self.settings.get('ollama_model', 'gemma3:4b')])
         self.ollama_combo = ctk.CTkOptionMenu(
             ollama_frame,
@@ -141,8 +145,8 @@ class DevicesTab(ctk.CTkFrame):
         self.ollama_status_label.pack(side='left', padx=10)
 
         # ----- Кнопка сохранения -----
-        self.save_btn = ctk.CTkButton(main_frame, text="Сохранить настройки", command=self.save_settings, width=200, height=35, font=('Inter', 14))
-        self.save_btn.grid(row=8, column=0, columnspan=3, pady=30)
+        self.save_btn = ctk.CTkButton(main_frame, text="Сохранить настройки", command=self.save_settings, width=200, height=30, font=('Inter', 14))
+        self.save_btn.grid(row=9, column=0, columnspan=3, pady=10)
 
     def update_mic_weight_label(self, value):
         self.mic_weight_label.configure(text=f"{float(value):.1f}")
@@ -151,7 +155,7 @@ class DevicesTab(ctk.CTkFrame):
         self.sys_weight_label.configure(text=f"{float(value):.1f}")
 
     # ----- Обработчики выбора -----
-    def _on_whisper_changed(self, choice=None):
+    def _on_whisper_changed(self, _=None):
         selected_display = self.whisper_var.get()
         for model, display in WHISPER_DISPLAY.items():
             if display == selected_display:
@@ -159,7 +163,7 @@ class DevicesTab(ctk.CTkFrame):
                 self.update_whisper_status()
                 break
 
-    def _on_ollama_changed(self, choice=None):
+    def _on_ollama_changed(self, _=None):
         selected_display = self.ollama_var.get()
         for model, display in OLLAMA_DISPLAY.items():
             if display == selected_display:
@@ -174,19 +178,24 @@ class DevicesTab(ctk.CTkFrame):
 
     def refresh_device_lists(self):
         devices = get_unique_input_devices()
-        mic_list = [f"{idx}: {name}" for idx, name, _ in devices]
-        sys_list = mic_list.copy()
-        self.mic_combo.configure(values=mic_list)
-        self.sys_combo.configure(values=sys_list)
+        device_names = [name for _, name, _ in devices]
+        self.device_map = {name: idx for idx, name, _ in devices}
+        self.mic_combo.configure(values=device_names)
+        self.sys_combo.configure(values=device_names)
+        mic_selected = False
         if self.settings.get('mic_device') is not None:
-            for item in mic_list:
-                if str(self.settings['mic_device']) in item:
-                    self.mic_combo.set(item)
+            for name, idx in self.device_map.items():
+                if idx == self.settings['mic_device']:
+                    self.mic_combo.set(name)
+                    mic_selected = True
                     break
+        if not mic_selected and device_names:
+            self.mic_combo.set(device_names[0])
+            mic_selected = True
         if self.settings.get('sys_device') is not None:
-            for item in sys_list:
-                if str(self.settings['sys_device']) in item:
-                    self.sys_combo.set(item)
+            for name, idx in self.device_map.items():
+                if idx == self.settings['sys_device']:
+                    self.sys_combo.set(name)
                     break
 
     def update_whisper_status(self):
@@ -239,8 +248,8 @@ class DevicesTab(ctk.CTkFrame):
         try:
             logger.info(f"Начало скачивания модели Whisper: {model_name}")
             repo_id = f"Systran/faster-whisper-{model_name}"
-            snapshot_download(repo_id=repo_id)
-            self.after(0, lambda: self.on_status(f"Модель Whisper {model_name} успешно скачана"), "active")
+            snapshot_download(repo_id=repo_id, tqdm_class=None)
+            self.after(0, lambda: self.on_status(f"Модель Whisper {model_name} успешно скачана", "active"))
             logger.info(f"Модель Whisper {model_name} успешно скачана")
             self.after(0, self.update_whisper_status)
         except Exception as e:
@@ -277,28 +286,34 @@ class DevicesTab(ctk.CTkFrame):
 
     # ----- Тест устройств -----
     def test_mic(self):
-        self.test_device(self.mic_combo.get(), "микрофон")
-
-    def test_sys(self):
-        self.test_device(self.sys_combo.get(), "системный звук")
-
-    def test_device(self, device_str, name):
-        import traceback
-        try:
-            dev_id = int(device_str.split(':')[0])
-        except:
+        mic_name = self.mic_combo.get()
+        mic_id = self.device_map.get(mic_name)
+        if mic_id is None:
             self.on_status("Ошибка: неверное устройство", "critical")
             return
-        self.on_status(f"Тестируем {name}...", "active")
-        threading.Thread(target=self._test_thread, args=(dev_id, name), daemon=True).start()
+        self.test_device(mic_id, "микрофон")
 
-    def _test_thread(self, dev_id, name):
+    def test_sys(self):
+        sys_name = self.sys_combo.get()
+        sys_id = self.device_map.get(sys_name)
+        if sys_id is None:
+            self.on_status("Ошибка: неверное устройство", "critical")
+            return
+        self.test_device(sys_id, "системный звук")
+
+    def test_device(self, device_id, name):
+        self.on_status(f"Тестируем {name}...", "active")
+        threading.Thread(target=self._test_thread, args=(device_id, name), daemon=True).start()
+
+    def _test_thread(self, device_id, name):
+        print(f"[DevicesTab] _test_thread started for {name}, device_id={device_id}")
         duration = 3
         try:
-            channels = sd.query_devices(dev_id)['max_input_channels']
+            channels = sd.query_devices(device_id)['max_input_channels']
             if channels > 2:
                 channels = 2
-            recording = sd.rec(int(duration * 16000), samplerate=16000, channels=channels, dtype='float32', device=dev_id)
+            recording = sd.rec(int(duration * 16000), samplerate=16000, channels=channels,
+                            dtype='float32', device=device_id)
             sd.wait()
             if channels == 2:
                 recording = np.mean(recording, axis=1)
@@ -307,20 +322,25 @@ class DevicesTab(ctk.CTkFrame):
             max_val = np.max(np.abs(recording))
             if max_val > 0:
                 recording = recording / max_val
-            model = Transcriber(model_name='tiny', device='cpu')
+            rms = np.sqrt(np.mean(recording**2))
+            print(f"  RMS = {rms}")
+            model = Transcriber(model_name='small', device='cpu')
             text = model.transcribe_chunk(recording)
-            self.after(0, lambda: self.on_status(f"Тест {name} распознал: {text[:100]}"), "active")
+            print(f"  Recognized text: '{text[:100]}'")
+            self.after(0, lambda: self.on_status(f"Тест {name} распознал: {text[:100]}", "info"))
         except Exception as e:
-            self.after(0, lambda: self.on_status(f"Ошибка теста {name}: {e}"), "critical")
+            import traceback
+            traceback.print_exc()
+            self.after(0, lambda: self.on_status(f"Ошибка теста {name}: {e}", "critical"))
 
     # ----- Сохранение настроек -----
     def save_settings(self):
         import traceback
         try:
-            mic_str = self.mic_combo.get()
-            sys_str = self.sys_combo.get()
-            mic_id = int(mic_str.split(':')[0]) if mic_str else None
-            sys_id = int(sys_str.split(':')[0]) if sys_str else None
+            mic_name = self.mic_combo.get()
+            sys_name = self.sys_combo.get()
+            mic_id = self.device_map.get(mic_name) if mic_name else None
+            sys_id = self.device_map.get(sys_name) if sys_name else None
             self.settings.update({
                 'mic_device': mic_id,
                 'sys_device': sys_id,

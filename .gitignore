@@ -21,6 +21,7 @@ templates/*.json
 !templates/README.md
 ffmpeg.exe
 assets/fonts/
+logs/
 *.log
 .DS_Store
 build_exe.bat

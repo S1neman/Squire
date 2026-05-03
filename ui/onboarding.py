@@ -95,18 +95,30 @@ class OnboardingFrame(ctk.CTkFrame):
         ollama_link.pack(side='left', padx=5)
 
         # ----- Устройства -----
-        ctk.CTkLabel(main_frame, text="Выберите устройства ввода:", font=('Inter', 14, 'bold')).pack(anchor='w', pady=(20, 10))
         devices = get_unique_input_devices()
-        mic_list = [f"{idx}: {name}" for idx, name, _ in devices]
-        sys_list = mic_list.copy()
+        device_names = [name for _, name, _ in devices]
+        self.device_map = {name: idx for idx, name, _ in devices}
 
-        ctk.CTkLabel(main_frame, text="Микрофон:", font=('Inter', 13)).pack(anchor='w')
-        self.mic_combo = ctk.CTkOptionMenu(main_frame, values=mic_list, font=('Inter', 13))
+        ctk.CTkLabel(main_frame, text="Микрофон:", font=('Inter', 13)).pack(anchor='w', pady=(10, 0))
+        self.mic_combo = ctk.CTkOptionMenu(main_frame, values=device_names, font=('Inter', 13))
         self.mic_combo.pack(fill='x', pady=5)
 
         ctk.CTkLabel(main_frame, text="Звук (системный):", font=('Inter', 13)).pack(anchor='w')
-        self.sys_combo = ctk.CTkOptionMenu(main_frame, values=sys_list, font=('Inter', 13))
+        self.sys_combo = ctk.CTkOptionMenu(main_frame, values=device_names, font=('Inter', 13))
         self.sys_combo.pack(fill='x', pady=5)
+        
+        ctk.CTkLabel(main_frame, 
+             text="Примечание: для захвата звука с ПК выберите 'Стерео-микшер'\n(если его нет, включите в настройках звука).",
+             font=('Inter', 11), wraplength=500, justify='left').pack(pady=(5, 10), anchor='w')
+
+        # Ставим устройства по умолчанию
+        from core.devices import get_default_input_device
+        # Микрофон
+        def_mic_id, def_mic_name = get_default_input_device()
+        if def_mic_name:
+            mic_values = self.mic_combo.cget('values')
+            if def_mic_name in mic_values:
+                self.mic_combo.set(def_mic_name)
 
         # Порог тишины
         ctk.CTkLabel(main_frame, text="Порог тишины (RMS):", font=('Inter', 13)).pack(anchor='w', pady=(10, 5))
@@ -118,9 +130,9 @@ class OnboardingFrame(ctk.CTkFrame):
         self.threshold_slider.configure(command=lambda v: self.threshold_label.configure(text=f"{float(v):.3f}"))
 
         ctk.CTkButton(main_frame, text="Завершить настройку", command=self.save_and_close,
-                      font=('Inter', 14), height=40, width=200).pack(pady=(20, 10))
+                      font=('Inter', 14), height=30, width=200).pack(pady=(20, 10))
 
-    def _on_whisper_changed(self, choice=None):
+    def _on_whisper_changed(self, _=None):
         selected_display = self.whisper_var.get()
         for model, display in WHISPER_DISPLAY.items():
             if display == selected_display:
@@ -128,7 +140,7 @@ class OnboardingFrame(ctk.CTkFrame):
                 self.update_whisper_status()
                 break
 
-    def _on_ollama_changed(self, choice=None):
+    def _on_ollama_changed(self, _=None):
         selected_display = self.ollama_var.get()
         for model, display in OLLAMA_DISPLAY.items():
             if display == selected_display:
@@ -193,7 +205,7 @@ class OnboardingFrame(ctk.CTkFrame):
         try:
             logger.info(f"Начало скачивания модели Whisper: {model_name}")
             repo_id = f"Systran/faster-whisper-{model_name}"
-            snapshot_download(repo_id=repo_id)
+            snapshot_download(repo_id=repo_id, tqdm_class=None)
             logger.info(f"Модель Whisper {model_name} успешно скачана")
             self.after(0, lambda: self.whisper_status_label.configure(text="✓ установлено", text_color="#3FCABA"))
         except Exception as e:
@@ -230,19 +242,19 @@ class OnboardingFrame(ctk.CTkFrame):
 
     def save_and_close(self):
         try:
-            mic_str = self.mic_combo.get()
-            sys_str = self.sys_combo.get()
-            mic_id = int(mic_str.split(':')[0]) if mic_str else None
-            sys_id = int(sys_str.split(':')[0]) if sys_str else None
+            mic_name = self.mic_combo.get()
+            sys_name = self.sys_combo.get()
+            mic_id = self.device_map.get(mic_name) if mic_name else None
+            sys_id = self.device_map.get(sys_name) if sys_name else None
             self.settings = {
                 'whisper_model': self.whisper_selected,
                 'ollama_model': self.ollama_selected,
                 'mic_device': mic_id,
                 'sys_device': sys_id,
                 'mic_weight': 1.0,
-                'sys_weight': 3.0,
+                'sys_weight': 5.0,
                 'silence_threshold': float(self.threshold_slider.get()),
-                'block_duration': 2.0,
+                'block_duration': 5.0,
                 'mode': 'mix'
             }
             # Создаём папку config, если её нет

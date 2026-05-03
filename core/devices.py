@@ -1,5 +1,17 @@
 import sounddevice as sd
 
+def get_default_input_device():
+    default_idx = sd.default.device[0]
+    if default_idx is None:
+        return None, None
+    try:
+        dev = sd.query_devices(default_idx)
+        if dev['max_input_channels'] > 0:
+            return default_idx, dev['name']
+    except:
+        pass
+    return None, None
+
 def get_unique_input_devices():
     devices = []
     seen_names = set()
